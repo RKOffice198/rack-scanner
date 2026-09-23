@@ -963,6 +963,8 @@ let cameraRunning = false;
 
 let cameraOpening = false;
 
+let cameraProcessing = false;
+
 let lastCameraText = "";
 
 let lastCameraTime = 0;
@@ -1830,40 +1832,31 @@ function showConfirmation() {
 
 function submitCurrent() {
 
-  const model =
-    currentModel;
+  const model = currentModel;
 
-
-  const rack =
-    currentRack;
-
-
-  const wasCamera =
-    cameraWasOpen;
+  const rack = currentRack;
 
 
   /*
-   * Immediately update local set.
-   *
-   * This makes duplicate checking
-   * for the next scan instantaneous.
+   * Add immediately to local memory.
+   * This keeps duplicate checking extremely fast.
    */
-
   modelSet.add(
     model.toLowerCase()
   );
 
 
+  /*
+   * Close only the confirmation popup.
+   *
+   * CAMERA STAYS OPEN.
+   */
   closeConfirmation();
 
 
   /*
-   * Send to Google Sheet.
-   *
-   * We don't block the scanner
-   * while waiting for the server.
+   * Send to Google Sheet in background.
    */
-
   api(
 
     {
@@ -1874,12 +1867,10 @@ function submitCurrent() {
 
     function(data) {
 
-      if (!data || !data.success) {
-
-        /*
-         * If save somehow failed,
-         * reload the model list.
-         */
+      if (
+        !data ||
+        !data.success
+      ) {
 
         loadModels();
 
@@ -1893,11 +1884,6 @@ function submitCurrent() {
         "Save error:",
         error
       );
-
-      /*
-       * Reload from server so local
-       * duplicate cache is corrected.
-       */
 
       loadModels();
 
@@ -1913,11 +1899,19 @@ function submitCurrent() {
   currentDuplicate = false;
 
 
-  if (wasCamera) {
+  /*
+   * UNLOCK CAMERA.
+   *
+   * It was never stopped.
+   */
+  cameraProcessing = false;
 
-    restartCameraSoon();
 
-  } else {
+  /*
+   * USB / manual mode:
+   * focus input again.
+   */
+  if (!cameraWasOpen) {
 
     focusScanner();
 
@@ -1925,16 +1919,11 @@ function submitCurrent() {
 
 }
 
-
 /* =====================================================
    CANCEL
    ===================================================== */
 
 function cancelCurrent() {
-
-  const wasCamera =
-    cameraWasOpen;
-
 
   closeConfirmation();
 
@@ -1946,19 +1935,23 @@ function cancelCurrent() {
   currentDuplicate = false;
 
 
-  if (wasCamera) {
+  /*
+   * UNLOCK CAMERA.
+   */
+  cameraProcessing = false;
 
-    restartCameraSoon();
 
-  } else {
+  /*
+   * If camera is not being used,
+   * return focus to scanner input.
+   */
+  if (!cameraWasOpen) {
 
     focusScanner();
 
   }
 
 }
-
-
 /* =====================================================
    CLOSE CONFIRMATION
    ===================================================== */
@@ -2139,57 +2132,48 @@ function startCamera() {
    CAMERA SCAN HANDLER
    ===================================================== */
 
-function handleCameraScan(
-  decodedText
-) {
-
-  const now =
-    Date.now();
-
+function handleCameraScan(decodedText) {
 
   /*
-   * Prevent the same QR from
-   * triggering many times while
-   * the camera sees it.
+   * If confirmation popup is already active,
+   * ignore all camera detections.
    */
-
-  if (
-    decodedText ===
-      lastCameraText &&
-    now - lastCameraTime <
-      1800
-  ) {
-
+  if (cameraProcessing) {
     return;
-
   }
 
 
-  lastCameraText =
-    decodedText;
-
-
-  lastCameraTime =
-    now;
+  const now = Date.now();
 
 
   /*
-   * Pause camera immediately.
+   * Prevent the same QR from triggering
+   * repeatedly while it is in front of camera.
    */
+  if (
+    decodedText === lastCameraText &&
+    now - lastCameraTime < 1800
+  ) {
+    return;
+  }
 
-  stopCamera()
-    .then(
-      function() {
 
-        processCode(
-          decodedText
-        );
+  lastCameraText = decodedText;
+  lastCameraTime = now;
 
-      }
-    );
+
+  /*
+   * LOCK CAMERA PROCESSING.
+   *
+   * IMPORTANT:
+   * We DO NOT stop the camera.
+   */
+  cameraProcessing = true;
+
+
+  processCode(decodedText);
 
 }
-
 
 /* =====================================================
    STOP CAMERA
@@ -2227,43 +2211,6 @@ function stopCamera() {
 }
 
 
-/* =====================================================
-   RESTART CAMERA
-   ===================================================== */
-
-function restartCameraSoon() {
-
-  if (!cameraWasOpen) {
-    return;
-  }
-
-
-  setTimeout(
-    function() {
-
-      if (
-        !document
-          .getElementById(
-            "cameraOverlay"
-          )
-          .classList.contains(
-            "show"
-          )
-      ) {
-
-        return;
-
-      }
-
-
-      startCamera();
-
-    },
-    120
-  );
-
-}
-
 
 /* =====================================================
    CLOSE CAMERA
@@ -2273,6 +2220,7 @@ function closeCamera() {
 
   cameraWasOpen = false;
 
+  cameraProcessing = false;
 
   stopCamera()
     .finally(
@@ -2302,8 +2250,6 @@ function closeCamera() {
     );
 
 }
-
-
 /* =====================================================
    VIEW LIST
    ===================================================== */
