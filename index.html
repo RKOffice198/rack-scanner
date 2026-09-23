@@ -415,6 +415,65 @@ button {
   border-radius: 17px;
 }
 
+.camera-controls {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #f1f5f9;
+}
+
+.camera-control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.camera-control-row:last-child {
+  margin-bottom: 0;
+}
+
+.camera-control-label {
+  min-width: 92px;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.zoom-range {
+  flex: 1;
+  height: 32px;
+  accent-color: #2563eb;
+}
+
+.zoom-value {
+  min-width: 52px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.flash-btn {
+  flex: 1;
+  height: 46px;
+  border: none;
+  border-radius: 13px;
+  background: #374151;
+  color: white;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.flash-btn.on {
+  background: #f59e0b;
+  color: #111827;
+}
+
+.flash-btn:disabled {
+  opacity: .45;
+}
+
 /* Keep confirmation popup above the camera overlay. */
 #cameraOverlay {
   z-index: 900;
@@ -879,6 +938,52 @@ button {
 
     <div id="reader"></div>
 
+    <div class="camera-controls">
+
+      <div class="camera-control-row">
+
+        <div class="camera-control-label">
+          🔍 ZOOM
+        </div>
+
+        <input
+          id="zoomRange"
+          class="zoom-range"
+          type="range"
+          min="1"
+          max="1"
+          step="0.1"
+          value="1"
+          disabled
+          oninput="changeCameraZoom(this.value)">
+
+        <div
+          id="zoomValue"
+          class="zoom-value">
+          1.0×
+        </div>
+
+      </div>
+
+      <div class="camera-control-row">
+
+        <div class="camera-control-label">
+          🔦 FLASH
+        </div>
+
+        <button
+          id="flashBtn"
+          class="flash-btn"
+          type="button"
+          onclick="toggleFlash()"
+          disabled>
+          FLASH OFF
+        </button>
+
+      </div>
+
+    </div>
+
     <button
       class="camera-close"
       onclick="closeCamera()">
@@ -973,6 +1078,12 @@ let cameraRunning = false;
 let cameraOpening = false;
 
 let cameraProcessing = false;
+
+/* Camera controls */
+let cameraZoom = 1;
+let cameraTorch = false;
+let cameraZoomSupported = false;
+let cameraTorchSupported = false;
 
 let lastCameraText = "";
 
@@ -2117,6 +2228,8 @@ function startCamera() {
 
         cameraRunning = true;
 
+        setupCameraControls();
+
       }
     )
 
@@ -2134,6 +2247,189 @@ function startCamera() {
 
       }
     );
+
+}
+
+
+/* =====================================================
+   CAMERA CONTROLS
+   ===================================================== */
+
+function setupCameraControls() {
+
+  cameraZoomSupported = false;
+  cameraTorchSupported = false;
+
+  const zoomRange =
+    document.getElementById("zoomRange");
+
+  const zoomValue =
+    document.getElementById("zoomValue");
+
+  const flashBtn =
+    document.getElementById("flashBtn");
+
+  /* Reset UI while capabilities are detected. */
+  zoomRange.disabled = true;
+  flashBtn.disabled = true;
+  flashBtn.classList.remove("on");
+  flashBtn.textContent = "FLASH OFF";
+
+  try {
+
+    const capabilities =
+      cameraScanner.getRunningTrackCapabilities();
+
+    /* ZOOM */
+    if (
+      capabilities &&
+      typeof capabilities.zoom === "object" &&
+      typeof capabilities.zoom.min === "number" &&
+      typeof capabilities.zoom.max === "number"
+    ) {
+
+      const min = capabilities.zoom.min;
+      const max = capabilities.zoom.max;
+      const step =
+        typeof capabilities.zoom.step === "number"
+          ? capabilities.zoom.step
+          : 0.1;
+
+      cameraZoomSupported = max > min;
+
+      zoomRange.min = String(min);
+      zoomRange.max = String(max);
+      zoomRange.step = String(step);
+
+      cameraZoom = Math.max(
+        min,
+        Math.min(cameraZoom, max)
+      );
+
+      zoomRange.value = String(cameraZoom);
+      zoomRange.disabled = !cameraZoomSupported;
+      zoomValue.textContent =
+        Number(cameraZoom).toFixed(1) + "×";
+
+    } else {
+
+      zoomRange.min = "1";
+      zoomRange.max = "1";
+      zoomRange.value = "1";
+      zoomValue.textContent = "1.0×";
+      zoomRange.disabled = true;
+
+    }
+
+    /* TORCH / FLASH */
+    cameraTorchSupported =
+      !!(
+        capabilities &&
+        capabilities.torch === true
+      );
+
+    flashBtn.disabled = !cameraTorchSupported;
+
+    if (!cameraTorchSupported) {
+      flashBtn.textContent = "FLASH NOT SUPPORTED";
+      cameraTorch = false;
+    }
+
+    if (cameraTorchSupported) {
+      applyCameraControls();
+    }
+
+  } catch (error) {
+
+    console.warn(
+      "Camera controls unavailable:",
+      error
+    );
+
+  }
+
+}
+
+
+function applyCameraControls() {
+
+  if (
+    !cameraScanner ||
+    !cameraRunning
+  ) {
+    return Promise.resolve();
+  }
+
+  const advanced = {};
+
+  if (cameraZoomSupported) {
+    advanced.zoom = Number(cameraZoom);
+  }
+
+  if (cameraTorchSupported) {
+    advanced.torch = !!cameraTorch;
+  }
+
+  if (!Object.keys(advanced).length) {
+    return Promise.resolve();
+  }
+
+  return cameraScanner
+    .applyVideoConstraints({
+      advanced: [advanced]
+    })
+    .catch(function(error) {
+
+      console.warn(
+        "Could not apply camera controls:",
+        error
+      );
+
+    });
+
+}
+
+
+function changeCameraZoom(value) {
+
+  cameraZoom = Number(value);
+
+  document
+    .getElementById("zoomValue")
+    .textContent =
+      cameraZoom.toFixed(1) + "×";
+
+  if (cameraRunning) {
+    applyCameraControls();
+  }
+
+}
+
+
+function toggleFlash() {
+
+  if (!cameraTorchSupported) {
+    return;
+  }
+
+  cameraTorch = !cameraTorch;
+
+  const button =
+    document.getElementById("flashBtn");
+
+  button.classList.toggle(
+    "on",
+    cameraTorch
+  );
+
+  button.textContent =
+    cameraTorch
+      ? "FLASH ON"
+      : "FLASH OFF";
+
+  if (cameraRunning) {
+    applyCameraControls();
+  }
 
 }
 
@@ -2241,6 +2537,7 @@ function closeCamera() {
 
   cameraWasOpen = false;
 
+  cameraTorch = false;
   cameraProcessing = false;
 
   stopCamera()
