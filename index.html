@@ -1844,20 +1844,6 @@ function showConfirmation() {
    CAMERA UNLOCK AFTER CONFIRMATION
    ===================================================== */
 
-function unlockCameraAfterAction() {
-
-  cameraProcessing = false;
-
-  /*
-   * Keep the last QR text and reset its timer.
-   * This prevents the same QR that is still in front
-   * of the camera from immediately opening another popup.
-   */
-  lastCameraTime = Date.now();
-
-}
-
-
 /* =====================================================
    SUBMIT
    ===================================================== */
@@ -1865,32 +1851,24 @@ function unlockCameraAfterAction() {
 function submitCurrent() {
 
   const model = currentModel;
-
   const rack = currentRack;
 
-
   /*
-   * Add immediately to local memory.
-   * This keeps duplicate checking extremely fast.
+   * Update local duplicate cache immediately.
    */
   modelSet.add(
     model.toLowerCase()
   );
 
-
   /*
-   * Close only the confirmation popup.
-   *
-   * CAMERA STAYS OPEN.
+   * Close confirmation.
    */
   closeConfirmation();
 
-
   /*
-   * Send to Google Sheet in background.
+   * Save in background.
    */
   api(
-
     {
       action: "save",
       model: model,
@@ -1899,13 +1877,8 @@ function submitCurrent() {
 
     function(data) {
 
-      if (
-        !data ||
-        !data.success
-      ) {
-
+      if (!data || !data.success) {
         loadModels();
-
       }
 
     },
@@ -1920,29 +1893,31 @@ function submitCurrent() {
       loadModels();
 
     }
-
   );
 
-
   currentModel = "";
-
   currentRack = "";
-
   currentDuplicate = false;
 
-
   /*
-   * UNLOCK CAMERA.
-   * The camera itself was never stopped.
+   * CAMERA MODE:
+   *
+   * Automatically return to camera.
+   *
+   * No button press required.
    */
-  unlockCameraAfterAction();
+  if (cameraWasOpen) {
 
+    cameraProcessing = false;
 
-  /*
-   * USB / manual mode:
-   * focus input again.
-   */
-  if (!cameraWasOpen) {
+    lastCameraText = "";
+    lastCameraTime = 0;
+
+    openCamera();
+
+  } else {
+
+    cameraProcessing = false;
 
     focusScanner();
 
@@ -1956,34 +1931,39 @@ function submitCurrent() {
 
 function cancelCurrent() {
 
+  /*
+   * Close confirmation.
+   */
   closeConfirmation();
 
-
   currentModel = "";
-
   currentRack = "";
-
   currentDuplicate = false;
 
-
   /*
-   * UNLOCK CAMERA.
-   * The camera itself was never stopped.
+   * CAMERA MODE:
+   *
+   * Automatically return to camera.
    */
-  unlockCameraAfterAction();
+  if (cameraWasOpen) {
 
+    cameraProcessing = false;
 
-  /*
-   * If camera is not being used,
-   * return focus to scanner input.
-   */
-  if (!cameraWasOpen) {
+    lastCameraText = "";
+    lastCameraTime = 0;
+
+    openCamera();
+
+  } else {
+
+    cameraProcessing = false;
 
     focusScanner();
 
   }
 
 }
+
 /* =====================================================
    CLOSE CONFIRMATION
    ===================================================== */
@@ -2007,44 +1987,42 @@ function closeConfirmation() {
 
 function openCamera() {
 
+  /*
+   * If already opening/running, do nothing.
+   */
   if (
     cameraRunning ||
     cameraOpening
   ) {
-
     return;
-
   }
 
-
+  /*
+   * Remember that this workflow is camera mode.
+   */
   cameraWasOpen = true;
 
+  /*
+   * Show camera window.
+   */
+  document
+    .getElementById("cameraOverlay")
+    .classList.add("show");
 
   document
-    .getElementById(
-      "cameraOverlay"
-    )
-    .classList.add(
-      "show"
-    );
+    .getElementById("cameraBtn")
+    .classList.add("active");
 
+  /*
+   * Start camera.
+   */
+  setTimeout(function() {
 
-  document
-    .getElementById(
-      "cameraBtn"
-    )
-    .classList.add(
-      "active"
-    );
+    startCamera();
 
-
-  setTimeout(
-    startCamera,
-    150
-  );
+  }, 120);
 
 }
-
 
 function startCamera() {
 
@@ -2167,20 +2145,16 @@ function startCamera() {
 function handleCameraScan(decodedText) {
 
   /*
-   * If confirmation popup is already active,
-   * ignore all camera detections.
+   * Ignore scans while a confirmation is open.
    */
   if (cameraProcessing) {
     return;
   }
 
-
   const now = Date.now();
 
-
   /*
-   * Prevent the same QR from triggering
-   * repeatedly while it is in front of camera.
+   * Prevent the same QR from triggering repeatedly.
    */
   if (
     decodedText === lastCameraText &&
@@ -2189,21 +2163,36 @@ function handleCameraScan(decodedText) {
     return;
   }
 
-
   lastCameraText = decodedText;
   lastCameraTime = now;
 
-
   /*
-   * LOCK CAMERA PROCESSING.
-   *
-   * IMPORTANT:
-   * We DO NOT stop the camera.
+   * LOCK processing immediately.
    */
   cameraProcessing = true;
 
+  /*
+   * SIMPLE WORKFLOW:
+   *
+   * CAMERA WINDOW
+   *      ↓
+   * QR SUCCESS
+   *      ↓
+   * STOP CAMERA
+   *      ↓
+   * HIDE CAMERA WINDOW
+   *      ↓
+   * SHOW SUBMIT/CANCEL WINDOW
+   */
+  stopCamera().finally(function() {
 
-  processCode(decodedText);
+    document
+      .getElementById("cameraOverlay")
+      .classList.remove("show");
+
+    processCode(decodedText);
+
+  });
 
 }
 
