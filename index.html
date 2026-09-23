@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rack Scanner Camera Test</title>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f3f4f6;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 90%;
+      max-width: 400px;
+      height: 65px;
+      border: none;
+      border-radius: 15px;
+      background: #16a34a;
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 20px;
+      background: white;
+      border-radius: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      word-break: break-word;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>📷 Rack Scanner Camera Test</h2>
+
+<div id="reader"></div>
+
+<div id="result">
+  Camera test — scan a QR code
+</div>
+
+<script>
+
+let scanner = new Html5Qrcode("reader");
+
+function onScanSuccess(decodedText) {
+
+  document.getElementById("result").innerHTML =
+    "✅ QR SCANNED<br><br>" +
+    decodedText;
+
+}
+
+scanner.start(
+  {
+    facingMode: "environment"
+  },
+  {
+    fps: 15,
+    qrbox: {
+      width: 250,
+      height: 250
+    }
+  },
+  onScanSuccess
+).catch(function(error) {
+
+  document.getElementById("result").innerHTML =
+    "❌ CAMERA ERROR<br><br>" +
+    error;
+
+});
+
+</script>
+
+</body>
+</html>
