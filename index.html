@@ -1,99 +1,2783 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rack Scanner Camera Test</title>
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #f3f4f6;
-    }
+<title>Rack Scanner</title>
 
-    h2 {
-      margin-bottom: 20px;
-    }
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-    #reader {
-      width: 100%;
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      border-radius: 15px;
-      overflow: hidden;
-    }
+<style>
 
-    button {
-      margin-top: 20px;
-      width: 90%;
-      max-width: 400px;
-      height: 65px;
-      border: none;
-      border-radius: 15px;
-      background: #16a34a;
-      color: white;
-      font-size: 22px;
-      font-weight: bold;
-    }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
-    #result {
-      margin-top: 20px;
-      padding: 20px;
-      background: white;
-      border-radius: 15px;
-      font-size: 20px;
-      font-weight: bold;
-      word-break: break-word;
-    }
-  </style>
-</head>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  font-family: Arial, sans-serif;
+  background: #eef1f5;
+  color: #111827;
+}
 
-<body>
+body {
+  padding: 10px;
+}
 
-<h2>📷 Rack Scanner Camera Test</h2>
+button,
+input {
+  font-family: Arial, sans-serif;
+}
 
-<div id="reader"></div>
+button {
+  touch-action: manipulation;
+  cursor: pointer;
+}
 
-<div id="result">
-  Camera test — scan a QR code
-</div>
+.app {
+  width: 100%;
+  max-width: 650px;
+  margin: auto;
+}
 
-<script>
+.title {
+  text-align: center;
+  font-size: 25px;
+  font-weight: 800;
+  margin: 5px 0 12px;
+}
 
-let scanner = new Html5Qrcode("reader");
 
-function onScanSuccess(decodedText) {
+/* =====================================================
+   TOP STATUS
+   ===================================================== */
 
-  document.getElementById("result").innerHTML =
-    "✅ QR SCANNED<br><br>" +
-    decodedText;
+.status-bar {
+  background: #111827;
+  color: white;
+  border-radius: 14px;
+  padding: 9px 12px;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.status-bar span {
+  color: #60a5fa;
+}
+
+
+/* =====================================================
+   CARD
+   ===================================================== */
+
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 13px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+}
+
+.heading {
+  text-align: center;
+  font-size: 17px;
+  font-weight: 800;
+  margin-bottom: 9px;
+}
+
+
+/* =====================================================
+   RACK
+   ===================================================== */
+
+.rack-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.rack-btn {
+  width: 72px;
+  height: 72px;
+  border: none;
+  border-radius: 50%;
+  background: #2563eb;
+  color: white;
+  font-size: 38px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.rack-btn:active {
+  transform: scale(.92);
+}
+
+.rack-input {
+  width: 150px;
+  height: 72px;
+  border: 3px solid #d1d5db;
+  border-radius: 16px;
+  background: white;
+  text-align: center;
+  font-size: 40px;
+  font-weight: 800;
+  outline: none;
+}
+
+.rack-input:focus {
+  border-color: #2563eb;
+}
+
+
+/* =====================================================
+   COLUMN
+   ===================================================== */
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 7px;
+}
+
+.column {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 4px solid #d1d5db;
+  background: white;
+  font-size: 23px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.column.selected {
+  background: #2563eb;
+  color: white;
+  border-color: #1d4ed8;
+  transform: scale(1.06);
+}
+
+.column:active {
+  transform: scale(.94);
+}
+
+
+/* =====================================================
+   SCANNER MODE
+   ===================================================== */
+
+.mode-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mode-btn {
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.mode-scanner {
+  background: #111827;
+  color: white;
+}
+
+.mode-manual {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.mode-btn.active {
+  box-shadow: inset 0 0 0 4px #2563eb;
+}
+
+
+/* =====================================================
+   INPUT
+   ===================================================== */
+
+.input-row {
+  margin-top: 9px;
+  position: relative;
+}
+
+.scanner-input {
+  width: 100%;
+  height: 65px;
+  border: 3px solid #cbd5e1;
+  border-radius: 15px;
+  padding: 0 15px;
+  font-size: 19px;
+  font-weight: 600;
+  outline: none;
+}
+
+.scanner-input:focus {
+  border-color: #2563eb;
+}
+
+.input-hint {
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+
+/* =====================================================
+   CAMERA BUTTON
+   ===================================================== */
+
+.camera-btn {
+  width: 100%;
+  height: 70px;
+  border: none;
+  border-radius: 17px;
+  background: #111827;
+  color: white;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.camera-btn.active {
+  background: #16a34a;
+}
+
+.camera-btn:active {
+  transform: scale(.98);
+}
+
+
+/* =====================================================
+   VIEW LIST
+   ===================================================== */
+
+.view-btn {
+  width: 100%;
+  height: 65px;
+  border: none;
+  border-radius: 17px;
+  background: #7c3aed;
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.view-btn:active {
+  transform: scale(.98);
+}
+
+
+/* =====================================================
+   CONFIRMATION OVERLAY
+   ===================================================== */
+
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,.78);
+  padding: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay.show {
+  display: flex;
+}
+
+.confirm-box {
+  width: 100%;
+  max-width: 570px;
+  background: white;
+  border-radius: 28px;
+  padding: 20px;
+  text-align: center;
+}
+
+.confirm-box.green {
+  border: 9px solid #16a34a;
+}
+
+.confirm-box.red {
+  border: 9px solid #dc2626;
+}
+
+.result-title {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 15px;
+}
+
+.green .result-title {
+  color: #15803d;
+}
+
+.red .result-title {
+  color: #b91c1c;
+}
+
+.result-model {
+  font-size: 25px;
+  font-weight: 900;
+  word-break: break-word;
+  margin: 10px 0;
+}
+
+.result-rack {
+  font-size: 20px;
+  color: #475569;
+  font-weight: 700;
+}
+
+
+/* =====================================================
+   BIG ACTION BUTTONS
+   ===================================================== */
+
+.action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 27px;
+  padding: 0 10px;
+}
+
+.action-wrap {
+  width: 150px;
+  text-align: center;
+}
+
+.action-btn {
+  width: 125px;
+  height: 125px;
+  border-radius: 50%;
+  border: 7px solid white;
+  color: white;
+  font-size: 66px;
+  font-weight: 900;
+  box-shadow: 0 5px 18px rgba(0,0,0,.28);
+}
+
+.action-btn:active {
+  transform: scale(.90);
+}
+
+.action-cancel {
+  background: #dc2626;
+}
+
+.action-submit {
+  background: #16a34a;
+}
+
+.action-label {
+  font-size: 17px;
+  font-weight: 900;
+  margin-top: 7px;
+}
+
+
+/* =====================================================
+   CAMERA
+   ===================================================== */
+
+.camera-box {
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  border-radius: 22px;
+  padding: 10px;
+  text-align: center;
+}
+
+.camera-title {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 5px 0 10px;
+}
+
+#reader {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 17px;
+}
+
+.camera-close {
+  width: 100%;
+  height: 58px;
+  margin-top: 9px;
+  border: none;
+  border-radius: 14px;
+  background: #374151;
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+
+/* =====================================================
+   LIST
+   ===================================================== */
+
+.list-box {
+  width: 100%;
+  max-width: 650px;
+  height: 90vh;
+  background: white;
+  border-radius: 22px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.list-title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.list-container {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.list-row {
+  display: grid;
+  grid-template-columns: 1fr 55px 115px;
+  gap: 5px;
+  align-items: center;
+  padding: 9px;
+  margin-bottom: 5px;
+  background: #f1f5f9;
+  border-radius: 11px;
+}
+
+.list-row.duplicate {
+  background: #fecaca;
+  border: 2px solid #dc2626;
+}
+
+.list-model {
+  font-size: 15px;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.list-time {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.list-rack {
+  text-align: center;
+  font-weight: 900;
+}
+
+.list-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.list-action {
+  border: none;
+  border-radius: 7px;
+  color: white;
+  font-size: 12px;
+  padding: 8px 6px;
+  font-weight: 700;
+}
+
+.edit {
+  background: #2563eb;
+}
+
+.remove {
+  background: #dc2626;
+}
+
+.close-list {
+  width: 100%;
+  height: 58px;
+  margin-top: 9px;
+  border: none;
+  border-radius: 14px;
+  background: #111827;
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+
+/* =====================================================
+   LOADING
+   ===================================================== */
+
+.loading {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.65);
+}
+
+.loading.show {
+  display: flex;
+}
+
+.loading-box {
+  background: white;
+  padding: 25px 35px;
+  border-radius: 18px;
+  text-align: center;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media(max-width:500px) {
+
+  body {
+    padding: 7px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .rack-btn {
+    width: 67px;
+    height: 67px;
+  }
+
+  .rack-input {
+    height: 67px;
+    width: 135px;
+    font-size: 36px;
+  }
+
+  .column {
+    font-size: 19px;
+    border-width: 3px;
+  }
+
+  .action-btn {
+    width: 105px;
+    height: 105px;
+    font-size: 55px;
+  }
+
+  .action-wrap {
+    width: 120px;
+  }
+
+  .action-label {
+    font-size: 15px;
+  }
 
 }
 
-scanner.start(
-  {
-    facingMode: "environment"
-  },
-  {
-    fps: 15,
-    qrbox: {
-      width: 250,
-      height: 250
+</style>
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+  <div class="title">
+    📦 RACK SCANNER
+  </div>
+
+
+  <div class="status-bar">
+    RACK: <span id="statusRack">1A</span>
+    &nbsp; | &nbsp;
+    MODE: <span id="statusMode">SCANNER</span>
+  </div>
+
+
+  <!-- =================================================
+       RACK
+       ================================================= -->
+
+  <div class="card">
+
+    <div class="heading">
+      RACK
+    </div>
+
+    <div class="rack-row">
+
+      <button
+        class="rack-btn"
+        onclick="changeRack(-1)">
+        ▼
+      </button>
+
+      <input
+        id="rackInput"
+        class="rack-input"
+        type="number"
+        min="1"
+        max="999"
+        value="1"
+        inputmode="numeric">
+
+      <button
+        class="rack-btn"
+        onclick="changeRack(1)">
+        ▲
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- =================================================
+       COLUMN
+       ================================================= -->
+
+  <div class="card">
+
+    <div class="heading">
+      COLUMN
+    </div>
+
+    <div class="columns">
+
+      <button class="column selected"
+              onclick="selectColumn('A')">A</button>
+
+      <button class="column"
+              onclick="selectColumn('B')">B</button>
+
+      <button class="column"
+              onclick="selectColumn('C')">C</button>
+
+      <button class="column"
+              onclick="selectColumn('D')">D</button>
+
+      <button class="column"
+              onclick="selectColumn('E')">E</button>
+
+      <button class="column"
+              onclick="selectColumn('F')">F</button>
+
+    </div>
+
+  </div>
+
+
+  <!-- =================================================
+       SCANNER
+       ================================================= -->
+
+  <div class="card">
+
+    <div class="heading">
+      SCANNER INPUT
+    </div>
+
+
+    <div class="mode-row">
+
+      <button
+        id="scannerModeBtn"
+        class="mode-btn mode-scanner active"
+        onclick="setScannerMode()">
+
+        🔌 SCANNER
+
+      </button>
+
+
+      <button
+        id="manualModeBtn"
+        class="mode-btn mode-manual"
+        onclick="setManualMode()">
+
+        ⌨️ TYPE MANUALLY
+
+      </button>
+
+    </div>
+
+
+    <div class="input-row">
+
+      <input
+        id="scannerInput"
+        class="scanner-input"
+        type="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        inputmode="none"
+        placeholder="READY FOR USB / BLUETOOTH SCANNER">
+
+    </div>
+
+
+    <div
+      id="inputHint"
+      class="input-hint">
+
+      Scanner mode — Android keyboard disabled
+
+    </div>
+
+  </div>
+
+
+  <!-- =================================================
+       CAMERA
+       ================================================= -->
+
+  <div class="card">
+
+    <button
+      id="cameraBtn"
+      class="camera-btn"
+      onclick="openCamera()">
+
+      📷 SCAN FROM PHONE CAMERA
+
+    </button>
+
+  </div>
+
+
+  <!-- =================================================
+       VIEW LIST
+       ================================================= -->
+
+  <button
+    class="view-btn"
+    onclick="openList()">
+
+    📋 VIEW LIST
+
+  </button>
+
+</div>
+
+
+<!-- =====================================================
+     CONFIRMATION
+     ===================================================== -->
+
+<div
+  id="confirmOverlay"
+  class="overlay">
+
+  <div
+    id="confirmBox"
+    class="confirm-box">
+
+    <div
+      id="resultTitle"
+      class="result-title">
+    </div>
+
+    <div
+      id="resultModel"
+      class="result-model">
+    </div>
+
+    <div
+      id="resultRack"
+      class="result-rack">
+    </div>
+
+
+    <div class="action-row">
+
+      <div class="action-wrap">
+
+        <button
+          id="leftAction"
+          class="action-btn">
+        </button>
+
+        <div
+          id="leftLabel"
+          class="action-label">
+        </div>
+
+      </div>
+
+
+      <div class="action-wrap">
+
+        <button
+          id="rightAction"
+          class="action-btn">
+        </button>
+
+        <div
+          id="rightLabel"
+          class="action-label">
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     CAMERA OVERLAY
+     ===================================================== -->
+
+<div
+  id="cameraOverlay"
+  class="overlay">
+
+  <div class="camera-box">
+
+    <div class="camera-title">
+      📷 SCAN QR CODE
+    </div>
+
+    <div id="reader"></div>
+
+    <button
+      class="camera-close"
+      onclick="closeCamera()">
+
+      CLOSE CAMERA
+
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     LIST OVERLAY
+     ===================================================== -->
+
+<div
+  id="listOverlay"
+  class="overlay">
+
+  <div class="list-box">
+
+    <div class="list-title">
+      📋 SCANNED LIST
+    </div>
+
+    <div
+      id="listContainer"
+      class="list-container">
+    </div>
+
+    <button
+      class="close-list"
+      onclick="closeList()">
+
+      CLOSE
+
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     LOADING
+     ===================================================== -->
+
+<div
+  id="loading"
+  class="loading">
+
+  <div class="loading-box">
+    Please wait...
+  </div>
+
+</div>
+
+
+<script>
+
+
+/* =====================================================
+   CONFIGURATION
+   ===================================================== */
+
+const API_URL =
+"https://script.google.com/macros/s/AKfycbwB_AWk6NrWUimxecJVpiM0RIFkDPK1RmWLLnGk61L2Unt-jlL_0qV9_xkK-ZOZZO1k/exec";
+
+
+/* =====================================================
+   VARIABLES
+   ===================================================== */
+
+let selectedColumn = "A";
+
+let currentModel = "";
+
+let currentRack = "";
+
+let currentDuplicate = false;
+
+let modelSet = new Set();
+
+let scannerMode = true;
+
+let cameraScanner = null;
+
+let cameraRunning = false;
+
+let cameraOpening = false;
+
+let lastCameraText = "";
+
+let lastCameraTime = 0;
+
+let cameraWasOpen = false;
+
+
+/* =====================================================
+   START
+   ===================================================== */
+
+window.addEventListener(
+  "load",
+  function() {
+
+    loadModels();
+
+    updateRackDisplay();
+
+    setScannerMode();
+
+    setTimeout(
+      focusScanner,
+      500
+    );
+
+  }
+);
+
+
+/* =====================================================
+   API JSONP
+   ===================================================== */
+
+function api(
+  params,
+  success,
+  failure
+) {
+
+  const callbackName =
+    "rackApi_" +
+    Date.now() +
+    "_" +
+    Math.floor(
+      Math.random() * 100000
+    );
+
+
+  const script =
+    document.createElement("script");
+
+
+  params.callback =
+    callbackName;
+
+
+  const query =
+    Object.keys(params)
+      .map(function(key) {
+
+        return (
+          encodeURIComponent(key) +
+          "=" +
+          encodeURIComponent(
+            params[key]
+          )
+        );
+
+      })
+      .join("&");
+
+
+  const timeout =
+    setTimeout(
+      function() {
+
+        cleanup();
+
+        if (failure) {
+          failure(
+            "Connection timeout."
+          );
+        }
+
+      },
+      15000
+    );
+
+
+  function cleanup() {
+
+    clearTimeout(timeout);
+
+    script.remove();
+
+    try {
+      delete window[
+        callbackName
+      ];
+    } catch(e) {}
+
+  }
+
+
+  window[callbackName] =
+    function(data) {
+
+      cleanup();
+
+      if (
+        data &&
+        data.success === false
+      ) {
+
+        if (failure) {
+          failure(
+            data.error ||
+            "Server error."
+          );
+        }
+
+        return;
+      }
+
+
+      if (success) {
+        success(data);
+      }
+
+    };
+
+
+  script.src =
+    API_URL +
+    "?" +
+    query;
+
+
+  script.onerror =
+    function() {
+
+      cleanup();
+
+      if (failure) {
+        failure(
+          "Could not connect to Google Sheet."
+        );
+      }
+
+    };
+
+
+  document
+    .body
+    .appendChild(script);
+
+}
+
+
+/* =====================================================
+   LOAD MODELS
+   ===================================================== */
+
+function loadModels() {
+
+  api(
+    {
+      action: "models"
+    },
+
+    function(data) {
+
+      modelSet =
+        new Set(
+          (data.models || [])
+            .map(function(model) {
+
+              return String(model)
+                .trim()
+                .toLowerCase();
+
+            })
+        );
+
+    },
+
+    function(error) {
+
+      console.error(error);
+
     }
-  },
-  onScanSuccess
-).catch(function(error) {
+  );
 
-  document.getElementById("result").innerHTML =
-    "❌ CAMERA ERROR<br><br>" +
-    error;
+}
 
-});
+
+/* =====================================================
+   RACK
+   ===================================================== */
+
+function getRack() {
+
+  let value =
+    parseInt(
+      document
+        .getElementById("rackInput")
+        .value
+    );
+
+
+  if (
+    isNaN(value) ||
+    value < 1
+  ) {
+
+    value = 1;
+
+  }
+
+
+  if (value > 999) {
+    value = 999;
+  }
+
+
+  document
+    .getElementById("rackInput")
+    .value = value;
+
+
+  return value;
+
+}
+
+
+function changeRack(amount) {
+
+  let value =
+    getRack();
+
+
+  value += amount;
+
+
+  if (value < 1) {
+    value = 1;
+  }
+
+
+  if (value > 999) {
+    value = 999;
+  }
+
+
+  document
+    .getElementById("rackInput")
+    .value = value;
+
+
+  updateRackDisplay();
+
+  focusScanner();
+
+}
+
+
+document
+  .getElementById("rackInput")
+  .addEventListener(
+    "input",
+    function() {
+
+      let value =
+        this.value
+          .replace(/\D/g, "");
+
+
+      if (
+        value.length > 3
+      ) {
+
+        value =
+          value.substring(
+            0,
+            3
+          );
+
+      }
+
+
+      this.value = value;
+
+      updateRackDisplay();
+
+    }
+  );
+
+
+document
+  .getElementById("rackInput")
+  .addEventListener(
+    "blur",
+    function() {
+
+      getRack();
+
+      updateRackDisplay();
+
+    }
+  );
+
+
+function updateRackDisplay() {
+
+  const text =
+    getRack() +
+    selectedColumn;
+
+
+  document
+    .getElementById(
+      "statusRack"
+    )
+    .textContent = text;
+
+}
+
+
+/* =====================================================
+   COLUMN
+   ===================================================== */
+
+function selectColumn(column) {
+
+  selectedColumn =
+    column;
+
+
+  document
+    .querySelectorAll(
+      ".column"
+    )
+    .forEach(
+      function(button) {
+
+        button.classList.remove(
+          "selected"
+        );
+
+
+        if (
+          button.textContent
+            .trim() === column
+        ) {
+
+          button.classList.add(
+            "selected"
+          );
+
+        }
+
+      }
+    );
+
+
+  updateRackDisplay();
+
+  focusScanner();
+
+}
+
+
+/* =====================================================
+   CURRENT RACK/COLUMN
+   ===================================================== */
+
+function getRackColumn() {
+
+  return (
+    getRack() +
+    selectedColumn
+  );
+
+}
+
+
+/* =====================================================
+   EXTRACT MODEL
+   ===================================================== */
+
+function extractModel(code) {
+
+  code =
+    String(code || "")
+      .trim();
+
+
+  if (!code) {
+    return "";
+  }
+
+
+  const position =
+    code.lastIndexOf("-");
+
+
+  if (position > 0) {
+
+    return code
+      .substring(
+        0,
+        position
+      )
+      .trim();
+
+  }
+
+
+  return code;
+
+}
+
+
+/* =====================================================
+   PROCESS SCAN
+   ===================================================== */
+
+function processCode(rawCode) {
+
+  rawCode =
+    String(rawCode || "")
+      .trim();
+
+
+  if (!rawCode) {
+    return;
+  }
+
+
+  const model =
+    extractModel(rawCode);
+
+
+  if (!model) {
+
+    beepError();
+
+    return;
+
+  }
+
+
+  currentModel =
+    model;
+
+
+  currentRack =
+    getRackColumn();
+
+
+  currentDuplicate =
+    modelSet.has(
+      model.toLowerCase()
+    );
+
+
+  showConfirmation();
+
+}
+
+
+/* =====================================================
+   INPUT
+   ===================================================== */
+
+const scannerInput =
+  document.getElementById(
+    "scannerInput"
+  );
+
+
+scannerInput.addEventListener(
+  "keydown",
+  function(event) {
+
+    if (
+      event.key === "Enter"
+    ) {
+
+      event.preventDefault();
+
+      const value =
+        scannerInput.value;
+
+
+      scannerInput.value = "";
+
+
+      if (value.trim()) {
+
+        processCode(value);
+
+      }
+
+
+      return;
+
+    }
+
+
+    /*
+     * Escape clears scanner input.
+     */
+
+    if (
+      event.key === "Escape"
+    ) {
+
+      scannerInput.value = "";
+
+    }
+
+  }
+);
+
+
+/*
+ * Some scanners send the data
+ * extremely quickly.
+ *
+ * We do not use keyup for processing.
+ * ENTER remains the trigger.
+ */
+
+
+/* =====================================================
+   SCANNER MODE
+   ===================================================== */
+
+function setScannerMode() {
+
+  scannerMode = true;
+
+
+  document
+    .getElementById(
+      "scannerModeBtn"
+    )
+    .classList.add("active");
+
+
+  document
+    .getElementById(
+      "manualModeBtn"
+    )
+    .classList.remove("active");
+
+
+  scannerInput
+    .setAttribute(
+      "inputmode",
+      "none"
+    );
+
+
+  scannerInput
+    .setAttribute(
+      "virtualkeyboardpolicy",
+      "manual"
+    );
+
+
+  scannerInput
+    .placeholder =
+      "READY FOR USB / BLUETOOTH SCANNER";
+
+
+  document
+    .getElementById(
+      "inputHint"
+    )
+    .textContent =
+      "Scanner mode — Android keyboard disabled";
+
+
+  document
+    .getElementById(
+      "statusMode"
+    )
+    .textContent =
+      "SCANNER";
+
+
+  focusScanner();
+
+}
+
+
+/* =====================================================
+   MANUAL MODE
+   ===================================================== */
+
+function setManualMode() {
+
+  scannerMode = false;
+
+
+  document
+    .getElementById(
+      "scannerModeBtn"
+    )
+    .classList.remove("active");
+
+
+  document
+    .getElementById(
+      "manualModeBtn"
+    )
+    .classList.add("active");
+
+
+  scannerInput
+    .setAttribute(
+      "inputmode",
+      "text"
+    );
+
+
+  scannerInput
+    .removeAttribute(
+      "virtualkeyboardpolicy"
+    );
+
+
+  scannerInput
+    .placeholder =
+      "TYPE PRODUCT CODE + ENTER";
+
+
+  document
+    .getElementById(
+      "inputHint"
+    )
+    .textContent =
+      "Manual typing mode — keyboard enabled";
+
+
+  document
+    .getElementById(
+      "statusMode"
+    )
+    .textContent =
+      "MANUAL";
+
+
+  scannerInput.focus();
+
+}
+
+
+/* =====================================================
+   FOCUS
+   ===================================================== */
+
+function focusScanner() {
+
+  if (
+    !scannerMode ||
+    cameraRunning ||
+    document
+      .getElementById(
+        "confirmOverlay"
+      )
+      .classList.contains("show")
+  ) {
+
+    return;
+
+  }
+
+
+  setTimeout(
+    function() {
+
+      scannerInput.focus();
+
+    },
+    80
+  );
+
+}
+
+
+/* =====================================================
+   CONFIRMATION
+   ===================================================== */
+
+function showConfirmation() {
+
+  const overlay =
+    document.getElementById(
+      "confirmOverlay"
+    );
+
+
+  const box =
+    document.getElementById(
+      "confirmBox"
+    );
+
+
+  const title =
+    document.getElementById(
+      "resultTitle"
+    );
+
+
+  const model =
+    document.getElementById(
+      "resultModel"
+    );
+
+
+  const rack =
+    document.getElementById(
+      "resultRack"
+    );
+
+
+  box.classList.remove(
+    "green",
+    "red"
+  );
+
+
+  if (currentDuplicate) {
+
+    box.classList.add("red");
+
+    title.textContent =
+      "⚠ DUPLICATE MODEL";
+
+    beepDuplicate();
+
+  } else {
+
+    box.classList.add("green");
+
+    title.textContent =
+      "✓ UNIQUE MODEL";
+
+    beepSuccess();
+
+  }
+
+
+  model.textContent =
+    currentModel;
+
+
+  rack.textContent =
+    "Rack: " +
+    currentRack;
+
+
+  const left =
+    document.getElementById(
+      "leftAction"
+    );
+
+
+  const right =
+    document.getElementById(
+      "rightAction"
+    );
+
+
+  const leftLabel =
+    document.getElementById(
+      "leftLabel"
+    );
+
+
+  const rightLabel =
+    document.getElementById(
+      "rightLabel"
+    );
+
+
+  /*
+   * UNIQUE:
+   *
+   * LEFT  = RED CANCEL
+   * RIGHT = GREEN SAVE
+   *
+   * DUPLICATE:
+   *
+   * LEFT  = GREEN SAVE
+   * RIGHT = RED CANCEL
+   */
+
+
+  if (!currentDuplicate) {
+
+    left.textContent = "✕";
+
+    left.className =
+      "action-btn action-cancel";
+
+    leftLabel.textContent =
+      "CANCEL";
+
+    left.onclick =
+      cancelCurrent;
+
+
+    right.textContent = "✓";
+
+    right.className =
+      "action-btn action-submit";
+
+    rightLabel.textContent =
+      "SAVE";
+
+    right.onclick =
+      submitCurrent;
+
+  } else {
+
+    left.textContent = "✓";
+
+    left.className =
+      "action-btn action-submit";
+
+    leftLabel.textContent =
+      "SAVE";
+
+    left.onclick =
+      submitCurrent;
+
+
+    right.textContent = "✕";
+
+    right.className =
+      "action-btn action-cancel";
+
+    rightLabel.textContent =
+      "CANCEL";
+
+    right.onclick =
+      cancelCurrent;
+
+  }
+
+
+  overlay.classList.add("show");
+
+}
+
+
+/* =====================================================
+   SUBMIT
+   ===================================================== */
+
+function submitCurrent() {
+
+  const model =
+    currentModel;
+
+
+  const rack =
+    currentRack;
+
+
+  const wasCamera =
+    cameraWasOpen;
+
+
+  /*
+   * Immediately update local set.
+   *
+   * This makes duplicate checking
+   * for the next scan instantaneous.
+   */
+
+  modelSet.add(
+    model.toLowerCase()
+  );
+
+
+  closeConfirmation();
+
+
+  /*
+   * Send to Google Sheet.
+   *
+   * We don't block the scanner
+   * while waiting for the server.
+   */
+
+  api(
+
+    {
+      action: "save",
+      model: model,
+      rack: rack
+    },
+
+    function(data) {
+
+      if (!data || !data.success) {
+
+        /*
+         * If save somehow failed,
+         * reload the model list.
+         */
+
+        loadModels();
+
+      }
+
+    },
+
+    function(error) {
+
+      console.error(
+        "Save error:",
+        error
+      );
+
+      /*
+       * Reload from server so local
+       * duplicate cache is corrected.
+       */
+
+      loadModels();
+
+    }
+
+  );
+
+
+  currentModel = "";
+
+  currentRack = "";
+
+  currentDuplicate = false;
+
+
+  if (wasCamera) {
+
+    restartCameraSoon();
+
+  } else {
+
+    focusScanner();
+
+  }
+
+}
+
+
+/* =====================================================
+   CANCEL
+   ===================================================== */
+
+function cancelCurrent() {
+
+  const wasCamera =
+    cameraWasOpen;
+
+
+  closeConfirmation();
+
+
+  currentModel = "";
+
+  currentRack = "";
+
+  currentDuplicate = false;
+
+
+  if (wasCamera) {
+
+    restartCameraSoon();
+
+  } else {
+
+    focusScanner();
+
+  }
+
+}
+
+
+/* =====================================================
+   CLOSE CONFIRMATION
+   ===================================================== */
+
+function closeConfirmation() {
+
+  document
+    .getElementById(
+      "confirmOverlay"
+    )
+    .classList.remove(
+      "show"
+    );
+
+}
+
+
+/* =====================================================
+   CAMERA
+   ===================================================== */
+
+function openCamera() {
+
+  if (
+    cameraRunning ||
+    cameraOpening
+  ) {
+
+    return;
+
+  }
+
+
+  cameraWasOpen = true;
+
+
+  document
+    .getElementById(
+      "cameraOverlay"
+    )
+    .classList.add(
+      "show"
+    );
+
+
+  document
+    .getElementById(
+      "cameraBtn"
+    )
+    .classList.add(
+      "active"
+    );
+
+
+  setTimeout(
+    startCamera,
+    150
+  );
+
+}
+
+
+function startCamera() {
+
+  if (
+    cameraRunning ||
+    cameraOpening
+  ) {
+
+    return;
+
+  }
+
+
+  cameraOpening = true;
+
+
+  cameraScanner =
+    new Html5Qrcode(
+      "reader"
+    );
+
+
+  const config = {
+
+    fps: 20,
+
+    qrbox:
+      function(
+        width,
+        height
+      ) {
+
+        const size =
+          Math.floor(
+            Math.min(
+              width,
+              height
+            ) * 0.72
+          );
+
+
+        return {
+          width: size,
+          height: size
+        };
+
+      },
+
+    aspectRatio: 1.0,
+
+    disableFlip: false
+
+  };
+
+
+  cameraScanner
+    .start(
+
+      {
+        facingMode:
+          {
+            exact:
+              "environment"
+          }
+      },
+
+      config,
+
+      function(decodedText) {
+
+        handleCameraScan(
+          decodedText
+        );
+
+      },
+
+      function() {
+
+        /*
+         * Normal QR scanning
+         * failures are ignored.
+         */
+
+      }
+
+    )
+
+    .then(
+      function() {
+
+        cameraOpening = false;
+
+        cameraRunning = true;
+
+      }
+    )
+
+    .catch(
+      function(error) {
+
+        cameraOpening = false;
+
+        cameraRunning = false;
+
+        alert(
+          "Camera could not be opened.\n\n" +
+          error
+        );
+
+      }
+    );
+
+}
+
+
+/* =====================================================
+   CAMERA SCAN HANDLER
+   ===================================================== */
+
+function handleCameraScan(
+  decodedText
+) {
+
+  const now =
+    Date.now();
+
+
+  /*
+   * Prevent the same QR from
+   * triggering many times while
+   * the camera sees it.
+   */
+
+  if (
+    decodedText ===
+      lastCameraText &&
+    now - lastCameraTime <
+      1800
+  ) {
+
+    return;
+
+  }
+
+
+  lastCameraText =
+    decodedText;
+
+
+  lastCameraTime =
+    now;
+
+
+  /*
+   * Pause camera immediately.
+   */
+
+  stopCamera()
+    .then(
+      function() {
+
+        processCode(
+          decodedText
+        );
+
+      }
+    );
+
+}
+
+
+/* =====================================================
+   STOP CAMERA
+   ===================================================== */
+
+function stopCamera() {
+
+  if (
+    !cameraScanner ||
+    !cameraRunning
+  ) {
+
+    return Promise.resolve();
+
+  }
+
+
+  return cameraScanner
+    .stop()
+    .then(
+      function() {
+
+        cameraRunning = false;
+
+      }
+    )
+    .catch(
+      function() {
+
+        cameraRunning = false;
+
+      }
+    );
+
+}
+
+
+/* =====================================================
+   RESTART CAMERA
+   ===================================================== */
+
+function restartCameraSoon() {
+
+  if (!cameraWasOpen) {
+    return;
+  }
+
+
+  setTimeout(
+    function() {
+
+      if (
+        !document
+          .getElementById(
+            "cameraOverlay"
+          )
+          .classList.contains(
+            "show"
+          )
+      ) {
+
+        return;
+
+      }
+
+
+      startCamera();
+
+    },
+    120
+  );
+
+}
+
+
+/* =====================================================
+   CLOSE CAMERA
+   ===================================================== */
+
+function closeCamera() {
+
+  cameraWasOpen = false;
+
+
+  stopCamera()
+    .finally(
+      function() {
+
+        document
+          .getElementById(
+            "cameraOverlay"
+          )
+          .classList.remove(
+            "show"
+          );
+
+
+        document
+          .getElementById(
+            "cameraBtn"
+          )
+          .classList.remove(
+            "active"
+          );
+
+
+        focusScanner();
+
+      }
+    );
+
+}
+
+
+/* =====================================================
+   VIEW LIST
+   ===================================================== */
+
+function openList() {
+
+  document
+    .getElementById(
+      "listOverlay"
+    )
+    .classList.add(
+      "show"
+    );
+
+
+  const container =
+    document.getElementById(
+      "listContainer"
+    );
+
+
+  container.innerHTML =
+    "<div style='text-align:center;padding:30px'>Loading...</div>";
+
+
+  api(
+
+    {
+      action: "list"
+    },
+
+    function(data) {
+
+      renderList(
+        data.rows || []
+      );
+
+    },
+
+    function(error) {
+
+      container.innerHTML =
+        "<div style='text-align:center;padding:30px;color:red'>" +
+        escapeHtml(error) +
+        "</div>";
+
+    }
+
+  );
+
+}
+
+
+function renderList(rows) {
+
+  const container =
+    document.getElementById(
+      "listContainer"
+    );
+
+
+  container.innerHTML = "";
+
+
+  if (!rows.length) {
+
+    container.innerHTML =
+      "<div style='text-align:center;padding:30px'>No scans yet.</div>";
+
+    return;
+
+  }
+
+
+  rows.forEach(
+    function(row) {
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+
+      div.className =
+        "list-row" +
+        (
+          row.duplicate
+            ? " duplicate"
+            : ""
+        );
+
+
+      const model =
+        escapeHtml(
+          row.model
+        );
+
+
+      const rack =
+        escapeHtml(
+          row.rack
+        );
+
+
+      const time =
+        escapeHtml(
+          row.time || ""
+        );
+
+
+      div.innerHTML = `
+
+        <div>
+
+          <div class="list-model">
+            ${model}
+          </div>
+
+          <div class="list-time">
+            ${time}
+          </div>
+
+        </div>
+
+        <div class="list-rack">
+          ${rack}
+        </div>
+
+        <div class="list-actions">
+
+          <button
+            class="list-action edit"
+            onclick="editRow(
+              ${Number(row.row)},
+              ${JSON.stringify(row.model)},
+              ${JSON.stringify(row.rack)}
+            )">
+
+            EDIT
+
+          </button>
+
+          <button
+            class="list-action remove"
+            onclick="removeRow(
+              ${Number(row.row)}
+            )">
+
+            DELETE
+
+          </button>
+
+        </div>
+
+      `;
+
+
+      container.appendChild(
+        div
+      );
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   EDIT
+   ===================================================== */
+
+function editRow(
+  rowNumber,
+  oldModel,
+  oldRack
+) {
+
+  const model =
+    prompt(
+      "Model Code:",
+      oldModel
+    );
+
+
+  if (model === null) {
+    return;
+  }
+
+
+  const rack =
+    prompt(
+      "Rack Column:",
+      oldRack
+    );
+
+
+  if (rack === null) {
+    return;
+  }
+
+
+  api(
+
+    {
+      action: "update",
+      row: rowNumber,
+      model: model,
+      rack: rack
+    },
+
+    function() {
+
+      loadModels();
+
+      openList();
+
+    },
+
+    function(error) {
+
+      alert(
+        "Edit failed:\n" +
+        error
+      );
+
+    }
+
+  );
+
+}
+
+
+/* =====================================================
+   DELETE
+   ===================================================== */
+
+function removeRow(
+  rowNumber
+) {
+
+  if (
+    !confirm(
+      "Remove this row?"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  api(
+
+    {
+      action: "delete",
+      row: rowNumber
+    },
+
+    function() {
+
+      loadModels();
+
+      openList();
+
+    },
+
+    function(error) {
+
+      alert(
+        "Delete failed:\n" +
+        error
+      );
+
+    }
+
+  );
+
+}
+
+
+/* =====================================================
+   CLOSE LIST
+   ===================================================== */
+
+function closeList() {
+
+  document
+    .getElementById(
+      "listOverlay"
+    )
+    .classList.remove(
+      "show"
+    );
+
+
+  focusScanner();
+
+}
+
+
+/* =====================================================
+   ESCAPE HTML
+   ===================================================== */
+
+function escapeHtml(
+  text
+) {
+
+  return String(text)
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+/* =====================================================
+   SOUNDS
+   ===================================================== */
+
+function beep(
+  frequency,
+  duration
+) {
+
+  try {
+
+    const AudioContext =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+
+    if (!AudioContext) {
+      return;
+    }
+
+
+    const context =
+      new AudioContext();
+
+
+    const oscillator =
+      context.createOscillator();
+
+
+    const gain =
+      context.createGain();
+
+
+    oscillator.frequency.value =
+      frequency;
+
+
+    oscillator.connect(
+      gain
+    );
+
+
+    gain.connect(
+      context.destination
+    );
+
+
+    oscillator.start();
+
+
+    gain.gain.setValueAtTime(
+      0.15,
+      context.currentTime
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      context.currentTime +
+      duration / 1000
+    );
+
+
+    oscillator.stop(
+      context.currentTime +
+      duration / 1000
+    );
+
+  } catch(error) {
+
+    console.log(error);
+
+  }
+
+}
+
+
+function beepSuccess() {
+
+  beep(
+    900,
+    80
+  );
+
+}
+
+
+function beepDuplicate() {
+
+  beep(
+    350,
+    120
+  );
+
+}
+
+
+function beepError() {
+
+  beep(
+    180,
+    180
+  );
+
+}
+
+
+/* =====================================================
+   KEYBOARD SHORTCUT
+   ===================================================== */
+
+document.addEventListener(
+  "keydown",
+  function(event) {
+
+    /*
+     * ESC closes confirmation.
+     */
+
+    if (
+      event.key === "Escape"
+    ) {
+
+      if (
+        document
+          .getElementById(
+            "confirmOverlay"
+          )
+          .classList.contains(
+            "show"
+          )
+      ) {
+
+        cancelCurrent();
+
+      }
+
+    }
+
+  }
+);
 
 </script>
 
